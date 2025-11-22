@@ -1,12 +1,9 @@
 import { useState, useRef } from 'react';
 import Icon from '@/components/ui/icon';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import ChatWindow from '@/components/ChatWindow';
+import ChatsTab from '@/components/ChatsTab';
+import ContactsTab from '@/components/ContactsTab';
+import ProfileSettingsTabs from '@/components/ProfileSettingsTabs';
 
 type Tab = 'chats' | 'contacts' | 'profile' | 'settings';
 
@@ -192,133 +189,33 @@ const Index = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleContactClick = (contact: Contact) => {
+    const existingChat = chats.find(c => c.name === contact.name);
+    if (existingChat) {
+      setSelectedChat(existingChat.id);
+      setActiveTab('chats');
+    }
+  };
+
   const currentChat = chats.find(c => c.id === selectedChat);
   const currentMessages = selectedChat ? messages[selectedChat] || [] : [];
 
   if (selectedChat && currentChat) {
     return (
-      <div className="h-screen flex flex-col bg-background max-w-md mx-auto" onKeyDown={handleKeyDown} tabIndex={0}>
-        <header className="bg-primary text-primary-foreground p-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button onClick={() => setSelectedChat(null)} className="hover:bg-primary/80 p-1 rounded">
-              <Icon name="ArrowLeft" size={20} />
-            </button>
-            <Avatar className="w-8 h-8">
-              <AvatarFallback className="text-xs bg-primary-foreground text-primary">
-                {currentChat.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className="text-sm font-medium">{currentChat.name}</h2>
-              <p className="text-[10px] opacity-80">{currentChat.online ? 'онлайн' : 'не в сети'}</p>
-            </div>
-          </div>
-          <Icon name="MoreVertical" size={20} />
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {currentMessages.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.isMine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[70%] rounded p-2 ${msg.isMine ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'}`}>
-                {msg.type === 'image' && msg.imageUrl && (
-                  <img src={msg.imageUrl} alt={msg.text} className="rounded mb-1 max-w-full" />
-                )}
-                <p className="text-sm break-words">{msg.text}</p>
-                <span className="text-[10px] opacity-70 mt-1 block">{msg.time}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="border-t border-border p-2 bg-card">
-          {isWriting ? (
-            <div className="space-y-2">
-              <div className="flex items-end gap-2">
-                <Textarea
-                  ref={textareaRef}
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  placeholder="Введите сообщение..."
-                  className="flex-1 min-h-[64px] text-sm"
-                  rows={3}
-                  autoFocus
-                />
-                <Button
-                  size="sm"
-                  onClick={handleSendMessage}
-                  className="h-10 w-10 p-0"
-                >
-                  <Icon name="Send" size={18} />
-                </Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] text-muted-foreground">Enter отправить | Esc отменить</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="h-7 px-2 text-xs"
-                >
-                  <Icon name="Image" size={14} className="mr-1" />
-                  Фото
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setIsWriting(true);
-                    setTimeout(() => textareaRef.current?.focus(), 0);
-                  }}
-                  className="h-10 text-xs"
-                >
-                  <Icon name="Edit3" size={14} className="mr-1" />
-                  Написать
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="h-10 text-xs"
-                >
-                  <Icon name="Image" size={14} className="mr-1" />
-                  Фото
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedChat(null);
-                    setIsWriting(false);
-                  }}
-                  className="h-10 text-xs"
-                >
-                  <Icon name="ArrowLeft" size={14} className="mr-1" />
-                  Назад
-                </Button>
-              </div>
-              <p className="text-[10px] text-muted-foreground text-center">Enter написать | P фото | Esc выход</p>
-            </div>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-          />
-        </div>
-      </div>
+      <ChatWindow
+        currentChat={currentChat}
+        currentMessages={currentMessages}
+        messageText={messageText}
+        isWriting={isWriting}
+        setMessageText={setMessageText}
+        setIsWriting={setIsWriting}
+        setSelectedChat={setSelectedChat}
+        handleSendMessage={handleSendMessage}
+        handleImageUpload={handleImageUpload}
+        handleKeyDown={handleKeyDown}
+        textareaRef={textareaRef}
+        fileInputRef={fileInputRef}
+      />
     );
   }
 
@@ -334,239 +231,29 @@ const Index = () => {
 
       <div className="flex-1 overflow-hidden flex flex-col">
         {activeTab === 'chats' && (
-          <>
-            <div className="p-2">
-              <Input
-                placeholder="Поиск чатов..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setSelectedIndex(0);
-                }}
-                className="h-8 text-sm"
-              />
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {filteredChats.map((chat, index) => (
-                <div key={chat.id}>
-                  <div 
-                    onClick={() => setSelectedChat(chat.id)}
-                    className={`p-3 cursor-pointer flex items-center gap-3 ${
-                      index === selectedIndex ? 'bg-accent' : 'hover:bg-secondary'
-                    }`}
-                  >
-                    <div className="relative">
-                      <Avatar className="w-10 h-10">
-                        <AvatarFallback className="text-sm bg-primary text-primary-foreground">
-                          {chat.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      {chat.online && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="font-medium text-sm truncate">{chat.name}</span>
-                        <span className="text-xs text-muted-foreground">{chat.time}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-muted-foreground truncate">{chat.lastMessage}</p>
-                        {chat.unread > 0 && (
-                          <Badge className="ml-2 h-4 min-w-[16px] px-1 text-[10px] bg-primary">
-                            {chat.unread}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <Separator />
-                </div>
-              ))}
-            </div>
-            <div className="p-2 bg-muted/50 border-t border-border">
-              <p className="text-[10px] text-muted-foreground text-center">2/8 или ↑↓ навигация | Enter открыть | 4/6 вкладки</p>
-            </div>
-          </>
+          <ChatsTab
+            filteredChats={filteredChats}
+            searchQuery={searchQuery}
+            selectedIndex={selectedIndex}
+            setSearchQuery={setSearchQuery}
+            setSelectedIndex={setSelectedIndex}
+            setSelectedChat={setSelectedChat}
+          />
         )}
 
         {activeTab === 'contacts' && (
-          <>
-            <div className="p-2">
-              <Input
-                placeholder="Поиск контактов..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setSelectedIndex(0);
-                }}
-                className="h-8 text-sm"
-              />
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {filteredContacts.map((contact, index) => (
-                <div key={contact.id}>
-                  <div 
-                    onClick={() => {
-                      const existingChat = chats.find(c => c.name === contact.name);
-                      if (existingChat) {
-                        setSelectedChat(existingChat.id);
-                        setActiveTab('chats');
-                      }
-                    }}
-                    className={`p-3 cursor-pointer flex items-center gap-3 ${
-                      index === selectedIndex ? 'bg-accent' : 'hover:bg-secondary'
-                    }`}
-                  >
-                    <div className="relative">
-                      <Avatar className="w-10 h-10">
-                        <AvatarFallback className="text-sm bg-primary text-primary-foreground">
-                          {contact.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      {contact.online && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{contact.name}</p>
-                      <p className="text-xs text-muted-foreground">{contact.status}</p>
-                    </div>
-                  </div>
-                  <Separator />
-                </div>
-              ))}
-            </div>
-            <div className="p-2 bg-muted/50 border-t border-border">
-              <p className="text-[10px] text-muted-foreground text-center">2/8 или ↑↓ навигация | Enter написать | 4/6 вкладки</p>
-            </div>
-          </>
+          <ContactsTab
+            filteredContacts={filteredContacts}
+            searchQuery={searchQuery}
+            selectedIndex={selectedIndex}
+            setSearchQuery={setSearchQuery}
+            setSelectedIndex={setSelectedIndex}
+            onContactClick={handleContactClick}
+          />
         )}
 
-        {activeTab === 'profile' && (
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="flex flex-col items-center mb-6">
-              <Avatar className="w-24 h-24 mb-3">
-                <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
-                  Я
-                </AvatarFallback>
-              </Avatar>
-              <h2 className="text-xl font-medium">Иван Иванов</h2>
-              <p className="text-sm text-muted-foreground">+7 900 123-45-67</p>
-            </div>
-            
-            <Card className="p-3 mb-3">
-              <div className="flex items-center gap-3 mb-3">
-                <Icon name="User" size={18} className="text-muted-foreground" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Имя пользователя</p>
-                  <p className="text-sm">@ivan_ivanov</p>
-                </div>
-              </div>
-              <Separator className="mb-3" />
-              <div className="flex items-center gap-3">
-                <Icon name="Info" size={18} className="text-muted-foreground" />
-                <div>
-                  <p className="text-xs text-muted-foreground">О себе</p>
-                  <p className="text-sm">Доступен в Telegram</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-3">
-              <div className="flex items-center justify-between mb-3 cursor-pointer hover:bg-secondary p-2 -m-2 rounded">
-                <div className="flex items-center gap-3">
-                  <Icon name="Bell" size={18} className="text-muted-foreground" />
-                  <span className="text-sm">Уведомления</span>
-                </div>
-                <Icon name="ChevronRight" size={18} className="text-muted-foreground" />
-              </div>
-              <Separator className="mb-3" />
-              <div className="flex items-center justify-between cursor-pointer hover:bg-secondary p-2 -m-2 rounded">
-                <div className="flex items-center gap-3">
-                  <Icon name="Lock" size={18} className="text-muted-foreground" />
-                  <span className="text-sm">Конфиденциальность</span>
-                </div>
-                <Icon name="ChevronRight" size={18} className="text-muted-foreground" />
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div className="flex-1 overflow-y-auto p-4">
-            <Card className="p-3 mb-3">
-              <h3 className="text-sm font-medium mb-3">Общие</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between cursor-pointer hover:bg-secondary p-2 -m-2 rounded">
-                  <div className="flex items-center gap-3">
-                    <Icon name="Moon" size={18} className="text-muted-foreground" />
-                    <span className="text-sm">Ночной режим</span>
-                  </div>
-                  <Icon name="ChevronRight" size={18} className="text-muted-foreground" />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between cursor-pointer hover:bg-secondary p-2 -m-2 rounded">
-                  <div className="flex items-center gap-3">
-                    <Icon name="Languages" size={18} className="text-muted-foreground" />
-                    <span className="text-sm">Язык</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Русский</span>
-                    <Icon name="ChevronRight" size={18} className="text-muted-foreground" />
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-3 mb-3">
-              <h3 className="text-sm font-medium mb-3">Данные</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between cursor-pointer hover:bg-secondary p-2 -m-2 rounded">
-                  <div className="flex items-center gap-3">
-                    <Icon name="HardDrive" size={18} className="text-muted-foreground" />
-                    <span className="text-sm">Память</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">2.4 МБ</span>
-                    <Icon name="ChevronRight" size={18} className="text-muted-foreground" />
-                  </div>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between cursor-pointer hover:bg-secondary p-2 -m-2 rounded">
-                  <div className="flex items-center gap-3">
-                    <Icon name="Download" size={18} className="text-muted-foreground" />
-                    <span className="text-sm">Автозагрузка</span>
-                  </div>
-                  <Icon name="ChevronRight" size={18} className="text-muted-foreground" />
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-3">
-              <h3 className="text-sm font-medium mb-3">Справка</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between cursor-pointer hover:bg-secondary p-2 -m-2 rounded">
-                  <div className="flex items-center gap-3">
-                    <Icon name="MessageCircleQuestion" size={18} className="text-muted-foreground" />
-                    <span className="text-sm">FAQ</span>
-                  </div>
-                  <Icon name="ChevronRight" size={18} className="text-muted-foreground" />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between cursor-pointer hover:bg-secondary p-2 -m-2 rounded">
-                  <div className="flex items-center gap-3">
-                    <Icon name="Info" size={18} className="text-muted-foreground" />
-                    <span className="text-sm">О программе</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">v1.0</span>
-                    <Icon name="ChevronRight" size={18} className="text-muted-foreground" />
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
+        {(activeTab === 'profile' || activeTab === 'settings') && (
+          <ProfileSettingsTabs activeTab={activeTab} />
         )}
       </div>
 
