@@ -41,7 +41,9 @@ const Index = () => {
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [messageText, setMessageText] = useState('');
+  const [isWriting, setIsWriting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [messages, setMessages] = useState<Record<number, Message[]>>({
     1: [
@@ -80,14 +82,43 @@ const Index = () => {
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (selectedChat) return;
+    if (selectedChat && !isWriting) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setSelectedChat(null);
+        setIsWriting(false);
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        setIsWriting(true);
+        setTimeout(() => textareaRef.current?.focus(), 0);
+        return;
+      }
+      if (e.key === 'p' || e.key === 'P' || e.key === 'з' || e.key === 'З') {
+        e.preventDefault();
+        fileInputRef.current?.click();
+        return;
+      }
+      return;
+    }
+
+    if (isWriting) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setIsWriting(false);
+        setMessageText('');
+        return;
+      }
+      return;
+    }
 
     const currentList = activeTab === 'chats' ? filteredChats : activeTab === 'contacts' ? filteredContacts : [];
     
-    if (e.key === 'ArrowDown') {
+    if (e.key === 'ArrowDown' || e.key === '2') {
       e.preventDefault();
       setSelectedIndex(prev => Math.min(prev + 1, currentList.length - 1));
-    } else if (e.key === 'ArrowUp') {
+    } else if (e.key === 'ArrowUp' || e.key === '8') {
       e.preventDefault();
       setSelectedIndex(prev => Math.max(prev - 1, 0));
     } else if (e.key === 'Enter') {
@@ -102,6 +133,20 @@ const Index = () => {
           setActiveTab('chats');
         }
       }
+    } else if (e.key === '4') {
+      e.preventDefault();
+      const tabs: Tab[] = ['chats', 'contacts', 'profile', 'settings'];
+      const currentIndex = tabs.indexOf(activeTab);
+      const prevIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+      setActiveTab(tabs[prevIndex]);
+      setSelectedIndex(0);
+    } else if (e.key === '6') {
+      e.preventDefault();
+      const tabs: Tab[] = ['chats', 'contacts', 'profile', 'settings'];
+      const currentIndex = tabs.indexOf(activeTab);
+      const nextIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+      setActiveTab(tabs[nextIndex]);
+      setSelectedIndex(0);
     }
   };
 
@@ -121,6 +166,7 @@ const Index = () => {
       [selectedChat]: [...(prev[selectedChat] || []), newMessage]
     }));
     setMessageText('');
+    setIsWriting(false);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,44 +231,92 @@ const Index = () => {
         </div>
 
         <div className="border-t border-border p-2 bg-card">
-          <div className="flex items-end gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              className="h-8 w-8 p-0"
-            >
-              <Icon name="Paperclip" size={16} />
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-            <Textarea
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder="Сообщение..."
-              className="flex-1 min-h-[32px] h-8 text-sm resize-none"
-              rows={1}
-            />
-            <Button
-              size="sm"
-              onClick={handleSendMessage}
-              className="h-8 w-8 p-0"
-            >
-              <Icon name="Send" size={16} />
-            </Button>
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-1">↑↓ навигация | Enter выбор | Esc назад</p>
+          {isWriting ? (
+            <div className="space-y-2">
+              <div className="flex items-end gap-2">
+                <Textarea
+                  ref={textareaRef}
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder="Введите сообщение..."
+                  className="flex-1 min-h-[64px] text-sm"
+                  rows={3}
+                  autoFocus
+                />
+                <Button
+                  size="sm"
+                  onClick={handleSendMessage}
+                  className="h-10 w-10 p-0"
+                >
+                  <Icon name="Send" size={18} />
+                </Button>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-muted-foreground">Enter отправить | Esc отменить</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-7 px-2 text-xs"
+                >
+                  <Icon name="Image" size={14} className="mr-1" />
+                  Фото
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setIsWriting(true);
+                    setTimeout(() => textareaRef.current?.focus(), 0);
+                  }}
+                  className="h-10 text-xs"
+                >
+                  <Icon name="Edit3" size={14} className="mr-1" />
+                  Написать
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-10 text-xs"
+                >
+                  <Icon name="Image" size={14} className="mr-1" />
+                  Фото
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedChat(null);
+                    setIsWriting(false);
+                  }}
+                  className="h-10 text-xs"
+                >
+                  <Icon name="ArrowLeft" size={14} className="mr-1" />
+                  Назад
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center">Enter написать | P фото | Esc выход</p>
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
         </div>
       </div>
     );
@@ -291,7 +385,7 @@ const Index = () => {
               ))}
             </div>
             <div className="p-2 bg-muted/50 border-t border-border">
-              <p className="text-[10px] text-muted-foreground text-center">↑↓ навигация | Enter открыть чат</p>
+              <p className="text-[10px] text-muted-foreground text-center">2/8 или ↑↓ навигация | Enter открыть | 4/6 вкладки</p>
             </div>
           </>
         )}
@@ -344,7 +438,7 @@ const Index = () => {
               ))}
             </div>
             <div className="p-2 bg-muted/50 border-t border-border">
-              <p className="text-[10px] text-muted-foreground text-center">↑↓ навигация | Enter написать</p>
+              <p className="text-[10px] text-muted-foreground text-center">2/8 или ↑↓ навигация | Enter написать | 4/6 вкладки</p>
             </div>
           </>
         )}
